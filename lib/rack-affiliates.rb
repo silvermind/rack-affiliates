@@ -70,7 +70,7 @@ module Rack
       { COOKIE_TAG => tag, 
         COOKIE_FROM => from, 
         COOKIE_TIME => time }.each do |key, value|
-          cookie_hash = {:value => value, :expires => expires}
+          cookie_hash = {:value => value, :expires => expires, :path => "/"}
           cookie_hash[:domain] = @cookie_domain if @cookie_domain
           Rack::Utils.set_cookie_header!(headers, key, cookie_hash)
       end 
