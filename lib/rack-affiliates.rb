@@ -8,6 +8,7 @@ module Rack
     COOKIE_TAG = "aff_tag"
     COOKIE_FROM = "aff_from"
     COOKIE_TIME = "aff_time"
+    COOKIE_LP = "aff_lp"
 
     def initialize(app, opts = {})
       @app = app
@@ -24,16 +25,16 @@ module Rack
       cookie_tag = req.cookies[COOKIE_TAG]
 
       if cookie_tag
-        tag, from, time = cookie_info(req)
+        tag, from, time, lp = cookie_info(req)
       end
 
       if params_tag && params_tag != cookie_tag
         if tag
           if @allow_overwrite
-            tag, from, time = params_info(req)
+            tag, from, time, lp = params_info(req)
           end
         else
-          tag, from, time = params_info(req)
+          tag, from, time, lp = params_info(req)
         end
       end
 
@@ -41,12 +42,13 @@ module Rack
         env["affiliate.tag"] = tag
         env['affiliate.from'] = from
         env['affiliate.time'] = time
+        env['affiliate.lp'] = lp
       end
 
       status, headers, body = @app.call(env)
 
       if tag != cookie_tag
-        bake_cookies(headers, tag, from, time)
+        bake_cookies(headers, tag, from, time, lp)
       end
 
       [status, headers, body]
@@ -57,19 +59,20 @@ module Rack
     end
 
     def params_info(req)
-      [req.params[@param], req.env["HTTP_REFERER"], Time.now.to_i]
+      [req.params[@param], req.env["HTTP_REFERER"], Time.now.to_i, req.path]
     end
 
     def cookie_info(req)
-      [req.cookies[COOKIE_TAG], req.cookies[COOKIE_FROM], req.cookies[COOKIE_TIME].to_i] 
+      [req.cookies[COOKIE_TAG], req.cookies[COOKIE_FROM], req.cookies[COOKIE_TIME].to_i, req.cookies[COOKIE_LP]]
     end
 
     protected
-    def bake_cookies(headers, tag, from, time)
+    def bake_cookies(headers, tag, from, time, lp)
       expires = Time.now + @cookie_ttl
       { COOKIE_TAG => tag, 
         COOKIE_FROM => from, 
-        COOKIE_TIME => time }.each do |key, value|
+        COOKIE_TIME => time,
+        COOKIE_LP => lp}.each do |key, value|
           cookie_hash = {:value => value, :expires => expires, :path => "/"}
           cookie_hash[:domain] = @cookie_domain if @cookie_domain
           Rack::Utils.set_cookie_header!(headers, key, cookie_hash)
