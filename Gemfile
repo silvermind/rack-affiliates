@@ -2,8 +2,8 @@ source "http://rubygems.org"
 gem 'rack'
 
 group :development do
-  gem "bundler", "~> 1.3.5"
-  gem "jeweler", "~> 1.6.4"
+  gem "bundler"
+  gem "jeweler"
   gem "simplecov"
   gem "rack-test"
   gem "minitest"
